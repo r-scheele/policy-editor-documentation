@@ -10,16 +10,26 @@ $ poetry shell && poetry install
 - Configure your environment variables:
 
 ```dotenv
-BASE_PATH = /tmp/fastgeoapi
-DATABASE_PATH = /tmp/fastgeoapi/database.json
-GITHUB_ACCESS_TOKEN=`cat ~/.github_access_token`
-GITHUB_USERNAME=<your_github_username>
-GITHUB_URL=<your_github_url where the authorization code lives>
-CLIENT_ID=<your_github_client_id>
-CLIENT_SECRET=<your_github_client_secret>
-SECRET_KEY=<your_secret_key>
-ALGORITHM=<your_algorithm e.g HS256>
+# Base path to clone the rego repository to
+BASE_PATH = /tmp
+
+# Path to the directory where the TinyDB database is stored.
+DATABASE_PATH = /tmp/database.json
+
+ORG_NAME = geobeyond/policies
 ENVIRONMENT=<your_environment e.g. production|development>
+
+# A list of super_users that can access the admin functionality.
+super_user=["<github_username|gitlab_username>"]
+
+# Postgres database configuration to retrieve group names from.
+DB_USER=geostore
+PASSWORD=geostore
+DATABASE=geostore
+HOST=db
+PORT=5432
+
+
 ```
 
 - Run the application from the entry point:

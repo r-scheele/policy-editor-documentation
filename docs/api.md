@@ -1,5 +1,22 @@
 # Rest API
 
+The application is a secured REST API, protected with an access token generated from either gitlab or github, depending on the repository you are using. Which means that you need to be authenticated to with Gitlab if you are using a Gitlab repository, and with Github if you are using a Github repository.
+
+Using the API is pretty straightforward without a front-end, you just need to send a request to the API endpoint, with the access token in the header. The access token is generated from the Gitlab or Github account you are using to access the repository.
+
+If you prefer to access the API using the swagger interface, you need to paste the access token in the top right corner of the swagger interface(see image below).
+
+![Authorize button on the swagger ui](./img/authorize.png)
+
+## Authentication
+
+GET `/gitlab/token` - Get a Gitlab access token
+GET `/github/token` - Get a Github access token
+
+These endpoints are only needed if your application has a front-end. They will redirect you to the Gitlab or Github authentication page, and then redirect you back to the application with a valid access token.
+
+## Policy CRUD Operations
+
 POST `/policies/`  Create new policy
 
 The POST route takes a request body containing the rules defined according to the schema. It is then, used to build a new policy. The response will be a REGO file written and pushed to GitHub as a newly established remote repository, with the request body conforming to a specified syntax described by the pydantic model `Policy`. <br />
@@ -207,5 +224,16 @@ Example response body: <br />
 {"status": 200, "message": "Policy deleted successfully"}  
 ```
 
+## Repository Management
+
+GET `/user/repo/github`
+GET `/user/repo/gitlab`
+
+Allows the user select the repository they want to use for their policies. The response will be a list of all the repositories that the user has access to. If the access token supplied is from Gitlab, the response will be a list of all the repositories that the user has access to on Gitlab, and vice versa.
 
 
+## Database Operations
+
+GET `/data`
+
+This endpoint retrieves the groupnames stored as part of the usergroups needed in the rego policy creation, it is used to accurately populate the dropdown menu in the frontend. The response will be a list of all the groupnames that have been stored in the database. <br />

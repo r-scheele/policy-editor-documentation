@@ -6,7 +6,7 @@ nav:
     - Introduction: 'index.md'
     - Installation procedures for the API: 'installation.md'
     - Application architecture overview: 'architecture.md'
-  - API Endpoints: 'api.md'
+    - API Endpoints: 'api.md'
 
 site_author: Abdulrahman Olamilekan
 site_description: >-

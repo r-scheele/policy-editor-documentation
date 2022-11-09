@@ -179,7 +179,7 @@ The rego rules combine data from the database with the input object, to work out
 
 The REGO equivalent of the above rule object is: <br />
 ```rego
-input.company == data.items[i].name
+input.groupname == data.usergroups[i].name
 ```
 
 ### allow_if_object_in_database
@@ -201,7 +201,7 @@ In the JSON above, the resulting REGO code loops over the datasource twice, chec
 
 The REGO equivalent of the above rule object is: <br />
 ```rego
-{ name: input.groupname, groupname: input.name} == data.usergroups[_]
+{ name: input.name, groupname: input.groupname} == data.usergroups[_]
 ```
 
 
