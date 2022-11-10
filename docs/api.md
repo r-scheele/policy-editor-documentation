@@ -226,7 +226,7 @@ Example response body: <br />
 
 ## Repository Management
 
-GET `/user/repo/github`
+GET `/user/repo/github` <br />
 GET `/user/repo/gitlab`
 
 Allows the user select the repository they want to use for their policies. The response will be a list of all the repositories that the user has access to. If the access token supplied is from Gitlab, the response will be a list of all the repositories that the user has access to on Gitlab, and vice versa.
@@ -237,3 +237,32 @@ Allows the user select the repository they want to use for their policies. The r
 GET `/data`
 
 This endpoint retrieves the groupnames stored as part of the usergroups needed in the rego policy creation, it is used to accurately populate the dropdown menu in the frontend. The response will be a list of all the groupnames that have been stored in the database. <br />
+
+
+Example response body: <br />
+```json
+{
+  "geostore.usergroup": [
+    "EDITOR_DPAU",
+    "EDITOR_CPQ",
+    "VIEWER",
+    "everyone",
+    "EDITOR_ATAC",
+    "TestGeocity",
+    "EDITOR_AMBIENTE",
+    "GEOCITY_ADMINS",
+    "EDITOR_SIZA",
+    "ROLE_SYS_GWCS",
+    "EDITOR_SITPAU",
+    "EDITOR_DBGT",
+    "ctr-AltimetriaLineeCTRN-VIEW",
+    "ctr-AltimetriaLineeCTRN-EDIT",
+    "EDITOR_NIC",
+    "ambiente-AsparmRaccoltaFarmaci-EDIT",
+    "EDITOR_URBANISTICA",
+    "EDITOR_CITTA_PUBBLICA",
+    "EDITOR_VINCOLI",
+    "EDITOR_COMPLETO"
+  ]
+}
+```
