@@ -228,7 +228,9 @@ allow {
 
 ```
 
-Consider a simple FastAPI application, already configured with Keycloak identity provider and Opa to make authorization decisions. We'll use the example above to show how to use fastapi-opa to add a login flow to your application.
+Consider a simple FastAPI application, that uses Keycloak identity provider and Opa to make authorization decisions. 
+
+We'll use the example rego result above to show how to use fastapi-opa to add a login flow to your application.
 
 
 Start by cloning the repository and installing the dependencies:
