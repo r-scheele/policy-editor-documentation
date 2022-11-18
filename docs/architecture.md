@@ -5,7 +5,7 @@ The API is written in Python and FastAPI framework, in a way that it is easy to 
 ![Screenshot 2022-06-13 at 09 55 43](https://user-images.githubusercontent.com/67229938/173343113-d51d72b4-84c8-4c3b-8555-af41e59cd2de.png)
 
 
-## Translator Logic
+# Translator Logic
 
 The REGO policies are created by a set of functions called **commands** that serves as the translation logic. Each of these commands is responsible for writing a specific REGO rule to a `.rego` file. However, the JSON to REGO conversion must follow certain conditions as defined by a pydantic model for effectiveness. 
 The following is how a rule is defined. The  Policy object which is the request body, as well as the Rule object is pydantic models.
@@ -15,7 +15,9 @@ class Policy:
 name: str
 rules: List[List[Rule]]
 ```
+
 Rule Object: <br />
+
 ```py3
 class Rule(BaseModel):
 command: str
@@ -26,17 +28,19 @@ A rule is defined by two keys: command and properties. The command key holds one
 
 ```json     
 {
-"command": "input_prop_equals",
-"properties": {
-   "input_property": "request_method",
-   "value": "GET"
-  }
+   "command": "input_prop_equals",
+   "properties": {
+      "input_property": "request_method",
+      "value": "GET"
+   }
 }
 ```
+
 In the example above, the command key represents the operation to be performed and the properties key represents the properties that are being used in the operation.
 
 `input_prop_equals` is the command in the example that initiates the appropriate operation, on the properties object.
 The above rule translates to an equality check between the input property `input_property` and the value `value`. <br />
+
 The REGO equivalent of the above rule object is: <br />
 
 ```rego
@@ -44,120 +48,194 @@ The REGO equivalent of the above rule object is: <br />
 ```
 
 Each Rule object forms a specific rule in a Allow block, and a list of Rules forms a Allow block. <br />
-```py3
-List[Rule] == Allow {
-...
-}
-```
+
 
 The API supports the following commands; input_prop_equals, input_prop_in, input_prop_in_as, allow_full_access.
 
 
 
-### input_props_equals
+## input_props_equals
 
-This command has different logic to handle series of equality checks.
+Path authorization is the most important feature of the API
 
-- Handling '*' as the wildcard flag: <br /> 
+   1. Allow users the access to all the paths, except a particular path variable. 
 
-This logic handles all the paths after a particular section. if `/collections/` is supplied as the option, all the routes after it will be allowed e.g allow `/collections/obs/`, allow `/collections/test-data/obs/`, allow `/collections/obs/` etc. <br /> 
+      Request body:
 
-Example:
-```json     
-{
-   "command": "input_prop_equals",
-   "properties": {
-      "input_property": "request_path",
-      "value": ["v1", "collections", "*"]
-   }
-}
-```
-In the json above, the `value` key holds an asterik in the values section, to indicate that the endpoint x is allowed to do y.
+      ```json
+      {
+         "command": "input_prop_equals",
+         "properties": {
+            "input_property": "request_path",
+            "value": "/users/*",
+            "exceptional_value": "payment",
+         }
+      }
+      ```
 
-The REGO equivalent of the above rule object is: <br />
-```rego
-input.request_path[0] == "v1"
-input.request_path[1] == "collections"
-```
+      Result:
 
-- Allowing all path parameter after a path section, except one: <br /> 
+      ```rego
 
-This logic handles cases where a particular path parameter is to be exempted, the command matches all other parameters aside the exempted one. e.g allow `/collections/obs/`, allow `/collections/test-data/obs/`, allow `/collections/obs/`. deny `/collections/lakes/`. <br /> 
+      input.request_path[0] = "users
+      input.request_path[1] != "payment"
+      ```
 
-Example:
+      With the above rule, all the request paths, that starts with `/users` will be allowed, except the payment.
 
-```json
-{
-   "command": "input_prop_equals",
-   "properties": {
-      "input_property": "request_path",
-      "value": ["v1", "collections", "*"],
-      "exceptional_value": "obs",
-   },
-}
-```
-In the json above, the `value` key holds an asterik in the values section, to indicate that the endpoint x is allowed to do y. The `exceptional_value` key holds the value of the path parameter that is to be exempted.
+      Example:
 
-The REGO equivalent of the above rule object is: <br />
-```rego
-input.request_path[0] == "v1"
-input.request_path[1] == "collections"
-input.request_path[2] != "obs"
-```
+      `/users/feed`  - returns Authorised
+      `/users/posts/comment`  - returns Authorised
 
--  Handling equality check between a particular property on the request object and a value: <br />
-This logic handles cases where a particular property on the input object is to be checked for equality against a value. 
-Example:
+      `/users/payment`  - returns Unauthorised
 
-```json
-{
-   "command": "input_prop_equals",
-   "properties": {
-      "input_property": "company",
-      "value": "Geobeyond srl"
-  }
-}
-```
-In the json above, the `value` key holds the value that is to be checked for equality, while the `input_property` key holds the property that is to be checked in the input object.
 
-The REGO equivalent of the above rule object is: <br />
-```rego
-input.company == "Geobeyond srl"
-```
+   2. Allow only access to request path prefixed with`/users` only
+      Request body:
+      ```json
+      {
+         "command": "input_prop_equals",
+         "properties": {
+               "input_property": "request_path",
+               "value": "/users/*",
+         },
+      }
+      ```
 
--  Allow access to a particular path: <br />
-This logic handles cases where a specific path is to granted access, if certain property is present on the input object.
+      Result:
+      ```rego
+      input.request_path[0] = "users
 
-Example:
-```json
-[
-{
-   "command": "input_prop_equals",
-   "properties": {
-      "input_property": "request_path",
-      "value": ["v1", "collections", "lakes"],
-   },
-},
-   {
-   "command": "input_prop_equals",
-   "properties": {
-      "input_property": "request_path",
-      "value": "admin",
-   },
-}
-]
-```
-In the JSON above, the list of objects indicates a very special `allow` block, that combines two commands. The `input_property` key holds the property that is to be validated before the request to that path is passed. 
+      ```
 
-The REGO equivalent of the above rule object is: <br />
-```rego
-allow {
-   input.request_path == ["v1", "collections", "lakes", ""]
-   input.groupname == "admin"
-}
-```
+      Example:
 
-### input_props_in
+      `/users/followers`  - returns Authorised
+      `/users/feeds/posts`  - returns Authorised
+
+      `/payment`  - returns Unauthorised
+
+   3. Allow only users access to their own routes. A log in with the username `Habeeb`, should have access to request path prefixed with`/users/Habeeb` and not `/users/John`
+
+      Request body:
+      ```json
+      {
+         "command": "input_prop_equals",
+         "properties": {
+            "input_property": "request_path",
+            "value": "v1/collections/{username}/*",
+         },
+      }
+      ```
+
+      Result:
+      ```rego
+
+      some username
+      input.request_path[0] = "users
+      input.request_path[1] = "username
+
+      ```
+      With the above rule, all the request paths, that starts with `/users/{username}` will be allowed
+
+      Example:
+      Say the username from an identity provider is habeeb
+
+      `/users/habeeb/profile`  - returns Authorised
+      `/users/habeeb/posts`  - returns Authorised
+
+      `/users/john/posts`  - returns Unauthorised
+
+
+   4. These rules targets a specific path. Only a certain path will be allowed, while every other path is rejected.
+
+      Request body:
+
+      ```json
+      {
+         "command": "input_prop_equals",
+         "properties": {
+               "input_property": "request_path",
+               "value": "users/payment",
+         },
+      }
+      ```
+
+      Result:
+
+      ```rego
+      input.request_path = ["users", "payment"]
+
+      ```
+
+      or 
+
+      ```json
+      {
+            "command": "input_prop_equals",
+            "properties": {
+               "input_property": "request_path",
+               "value": "users/{username}",
+            },
+      }
+      ```
+
+      Result:
+
+      ```rego
+
+      some username
+      input.request_path = ["users", username]
+      input.preferred_username = username
+
+      ```
+
+      Example:
+      Say the username from an identity provider is habeeb
+      `/users/habeeb`  - returns Authorised
+      `/users/habeeb/profile`  - returns Unauthorised
+
+      `/users/payment`  - returns Authorised
+      `/users/feeds`  - returns Unauthorised
+
+   5. Allow users the access to all the paths prefixed with the username, except a particular path variable. 
+
+      Request body:
+
+      ```json
+         {
+            "command": "input_prop_equals",
+            "properties": {
+                  "input_property": "request_path",
+                  "value": "/users/{username}/*",
+                  "exceptional_value": "chat",
+            }
+         }
+      ```
+
+      Result:
+
+      ```rego
+      some username
+      input.preferred_username = username
+      input.request_path[0] = "users
+      input.request_path[1] = username
+      input.request_path[2] = "chat"
+      ```
+
+      With the above rule, all the request paths, that starts with `/users/{username}` will be allowed, except `/users/{username}/chat`
+
+
+      Example:
+      `/users/habeeb/feed`  - returns Authorised
+      `/users/habeeb/posts`  - returns Authorised
+
+      `/users/habeeb/payment`  - returns Unauthorised
+
+      Note that a couple of these rules can be combined to achieve your authorization rules, and it is not limited to example given here.
+
+## input_props_in
 
 This logic checks if a particular property on the input object is present in a list of values from the database. <br />
 
@@ -165,12 +243,12 @@ Example:
 
 ```json
 {
-"command": "input_prop_in",
-"properties": {
-   "input_property": "groupname",
-   "datasource_name": "usergroups",
-   "datasource_loop_variable": "name"
-}
+   "command": "input_prop_in",
+   "properties": {
+      "input_property": "groupname",
+      "datasource_name": "usergroups",
+      "datasource_loop_variable": "name"
+   }
 }
 ```
 In the json above, the `input_property` key holds the property that is to be validated before the request to that path is passed. The `datasource_name` key holds the name of the datasource(a list) from the database. The `datasource_loop_variable` key holds the name of the key on each object in the datasource.
@@ -178,23 +256,24 @@ In the json above, the `input_property` key holds the property that is to be val
 The rego rules combine data from the database with the input object, to work out certain conditions. The datasource is the list of values from the database, and the `datasource_loop_variable` is the name of the key on each object in the datasource.
 
 The REGO equivalent of the above rule object is: <br />
+
 ```rego
 input.groupname == data.usergroups[i].name
 ```
 
-### allow_if_object_in_database
+## allow_if_object_in_database
 
 This logic checks if the value of two properties on the input object is present on one object in the database <br />
 
 Example:
 ```json
-     {
-         "command": "allow_if_object_in_database",
-         "properties": {
-            "datasource_name": "usergroups",
-            "datasource_variables": ["name", "groupname"],
-         }
-     }
+{
+   "command": "allow_if_object_in_database",
+   "properties": {
+      "datasource_name": "usergroups",
+      "datasource_variables": ["name", "groupname"],
+   }
+}
 ```
 
 In the JSON above, the resulting REGO code loops over the datasource twice, checking for equality between the values of the input properties, and the values of the datasource loop variables.
@@ -205,7 +284,7 @@ The REGO equivalent of the above rule object is: <br />
 ```
 
 
-### allow_full_access
+## allow_full_access
 
 This logic allows full access to the resources defined. If the value of the property on the input object has a particular value<br />
 

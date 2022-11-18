@@ -1,11 +1,297 @@
-Introduction
-============
+# Introduction
 
-OPAL is the easiest way to keep your solution's authorization layer up-to-date in realtime. By writing policies and authorisation rules for your application, you can ensure synchronization between your policies and your live application, where each user interaction or API call may affect access-control decisions.
 
-This project arise from the need to write authorisation rules using a client application e.g front-end application, and to keep them up-to-date with the application's code. OPAL Policy manager provides a user interface for non-technical users and a REST API to write and manage authorisation rules.
-
-By converting JSON variables to REGO rules, the API ensures the written rules are pushed to a Github/Gitlab repository that houses the company's authorization solution using the Opal server.
-
+This project aims to abstract the technical details of writing REGO and provide a simple interface to write policies for your application in a Github/Gitlab repository. By transforming the familiar JSON format to REGO, the developer can focus on writing the policy and not on the technical details of REGO.
 
 ![API Image](./img/api.png)
+
+As an example, the API transforms the following JSON policy to REGO:
+
+```json
+{
+    "example": {
+        "name": "Example",
+        "repo_url": "https://github.com/geobeyond/test-rego",
+        "repo_id": 12345,
+        "rules": [
+            [
+                {
+                    "command": "allow_if_object_in_database",
+                    "properties": {
+                        "datasource_name": "usergroups",
+                        "datasource_variables": ["name", "groupname"],
+                    },
+                },
+                {
+                    "command": "input_prop_in",
+                    "properties": {
+                        "input_property": "company",
+                        "datasource_name": "items",
+                        "datasource_loop_variable": "name",
+                    },
+                },
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_method",
+                        "value": "GET",
+                    },
+                },
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "company",
+                        "value": "geobeyond",
+                    },
+                },
+            ],
+            [
+                {
+                    "command": "allow_full_access",
+                    "properties": {
+                        "input_property": "groupname",
+                        "value": "EDITOR_ATAC",
+                    },
+                },
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_path",
+                        "value": "v1/collections/*",
+                        "exceptional_value": "obs",
+                    },
+                }
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_path",
+                        "value": "v1/collections/{username}/*",
+                    },
+                }
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_path",
+                        "value": "v1/collections/*",
+                    },
+                }
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_path",
+                        "value": "v1/collections",
+                    },
+                },
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_path",
+                        "value": "v1/collections/{username}",
+                    },
+                }
+            ],
+            [
+                {
+                    "command": "input_prop_equals",
+                    "properties": {
+                        "input_property": "request_path",
+                        "value": "v1/collections/{username}/*",
+                        "exceptional_value": "obs",
+                    },
+                }
+            ],
+        ],
+    }
+}
+```
+
+result: 
+
+```rego
+
+package httpapi.authz
+import input
+default allow = false
+
+
+
+allow {
+  {"name": input.name,"groupname": input.groupname} = data.usergroups[_]
+  input.company = data.items[_].company
+  input.request_method = "GET"
+}
+
+allow {
+  input.company = "geobeyond"
+}
+
+allow {
+  input.groupname = "EDITOR_ATAC"
+}
+
+allow {
+  input.request_path[0] = "v1" 
+  input.request_path[1] = "collections" 
+  input.request_path[1] != "obs"
+}
+
+allow {
+  some username  
+  input.request_path = ["user", username] 
+  input.preferred_username = username  
+  
+}
+
+allow {
+  input.request_path[0] = "v1" 
+  input.request_path[1] = "collections" 
+  
+}
+
+allow {
+  input.request_path = ["v1"]
+}
+
+allow {
+  some username 
+  input.preferred_username = username  
+  input.request_path[0] = "v1" 
+  input.request_path[1] = "collections" 
+  input.request_path[2] != "obs"
+}
+
+```
+
+## Why do we need this?
+
+When a user sends a request to an endpoint, He/She is authenticated by an identity provider e.g Keycloak, AWS IAM, or Okta. The identity provider provides the user with an access token that contains information about the user. The access token is then sent to the application and the application verifies the token and extracts the user information. 
+
+![API Image](./img/fastapi-opa.png)
+
+The application then uses the user information to decide whether to allow or deny the request. Writing these decisions requires knowledge of REGO policy language, which is a purpose-built declarative policy language that supports Open Policy Agent (OPA). It is used to write authorization policy allowing OPA to make access control decisions.
+
+
+## How does it work?
+
+fastapi-opa is an extension to FastAPI that allows you to add a login flow to your application within minutes using open policy agent and your favourite identity provider.
+
+With this extension, you can authenticate your users using your favourite identity provider and then use the user information to make authorization decisions using OPA.
+
+To show the power of this extension, we will use the following example, where we show the rego equivalent of the following JSON policy:
+
+The policy decision in `policy/auth.rego` authorizes the user to access the endpoint if they're logged as the username in the path
+
+
+JSON request:
+
+```json
+    {
+        "command": "input_prop_equals",
+        "properties": {
+            "input_property": "request_path",
+            "value": "v1/collections/{username}",
+        },
+    }
+
+```
+
+Our API response:
+
+```rego
+
+package httpapi.authz
+import input
+default allow = false
+
+
+
+allow {
+  some username  
+  input.request_path = ["user", username] 
+  input.preferred_username = username  
+  
+}
+
+```
+
+Consider a simple FastAPI application, already configured with Keycloak identity provider and Opa to make authorization decisions. We'll use the example above to show how to use fastapi-opa to add a login flow to your application.
+
+
+Start by cloning the repository and installing the dependencies:
+  
+```bash
+  git clone https://github.com/r-scheele/test-api.git
+```
+
+```bash
+  cd test-api
+```
+
+```bash
+  poetry shell && poetry install
+```
+
+Start all the services (Keycloak and Opa) using docker-compose:
+
+```bash
+  docker-compose up -d
+```
+
+Start the application:
+
+```bash
+  uvicorn main:app --port 8000 --reload
+```
+
+The application is now running on http://localhost:8000.
+
+Step 1.
+
+Import the already configured postman collection and environment variables to test the application:
+`test-api.postman_collection.json` and `test-api.postman_environment.json`
+
+Step 2.
+
+Log in to get the access token- you can use the access token to make requests to the application.
+
+
+step 3.
+
+`/user/habeeb` - Accessible, returns
+
+```json
+{
+    "message": "Hello World from test1"
+}
+```
+
+
+`/user/john` - - Inaccessible, returns 
+
+```json 
+{
+    "message": "Unauthorized"
+}
+```
+
+
+`/user/{username}/test` - Inaccessible, returns 
+
+```json 
+{
+    "message": "Unauthorized"
+}
+```
+
