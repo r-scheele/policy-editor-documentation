@@ -5,6 +5,8 @@ This project aims to abstract the technical details of writing REGO and provide 
 
 ![API Image](./img/api.png)
 
+## Example request and response to the policy editor.
+
 As an example, the API transforms the following JSON policy to REGO:
 
 ```json
