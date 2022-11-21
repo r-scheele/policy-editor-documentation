@@ -7,7 +7,7 @@ This project aims to abstract the technical details of writing REGO and provide 
 
 ## Example request and response to the policy editor.
 
-As an example, the API transforms the following JSON policy to REGO:
+As an example, the API transforms the following JSON policy into REGO rules:
 
 ```json
 {
@@ -193,9 +193,8 @@ fastapi-opa is an extension to FastAPI that allows you to add a login flow to yo
 
 With this extension, you can authenticate your users using your favourite identity provider and then use the user information to make authorization decisions using OPA.
 
-To show the power of this extension, we will use the following example, where we show the rego equivalent of the following JSON policy:
+To show the power of this extension, we will use the following example, where we use the rego equivalent of the following JSON policy, to authorize user access to some endpoints in an application.
 
-The policy decision in `policy/auth.rego` authorizes the user to access the endpoint if they're logged as the username in the path
 
 
 JSON request:
@@ -234,6 +233,7 @@ Consider a simple FastAPI application, that uses Keycloak identity provider and 
 
 We'll use the example rego result above to show how to use fastapi-opa to add a login flow to your application.
 
+The policy decision in `policy/auth.rego` authorizes the user to access the endpoint if they're logged as the username in the path.
 
 Start by cloning the repository and installing the dependencies:
   
