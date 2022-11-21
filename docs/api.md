@@ -226,11 +226,14 @@ Example response body: <br />
 
 ## Repository Management
 
+This section is only needed by the front-end application to select which repo to use for their policy, which would be list as a dropdown menu.
+
 GET `/user/repo/github` <br />
 GET `/user/repo/gitlab`
 
-Allows the user select the repository they want to use for their policies. The response will be a list of all the repositories that the user has access to. If the access token supplied is from Gitlab, the response will be a list of all the repositories that the user has access to on Gitlab, and vice versa.
+The response will be a list of all the repositories that the user has access to. If the access token supplied is from Gitlab, the response will be a list of all the repositories that the user has access to on Gitlab, and vice versa.
 
+If the API is used directly, the repository to used for writing the policy is supplied as a url in the request body.
 
 ## Database Operations
 
