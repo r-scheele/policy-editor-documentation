@@ -263,19 +263,36 @@ Start the application:
 
 The application is now running on http://localhost:8000.
 
-Step 1.
+### Configure postman for testing the rules
 
-Import the already configured postman collection and environment variables to test the application:
+1. Import the already configured postman collection and environment variables to test the application:
 `test-api.postman_collection.json` and `test-api.postman_environment.json`
 
-Step 2.
+2. In the login request, open the test tab and paste the following code:
 
-Log in to get the access token- you can use the access token to make requests to the application.
+```js
+
+var response = JSON.parse(responseBody);
+postman.setEnvironmentVariable("refresh_token", response.refresh_token);
+postman.setEnvironmentVariable("access_token", response.access_token);
+postman.setEnvironmentVariable("session_state", response.session_state);
+
+```
+
+### Send request to keycloak to get access token
+
+POST `{{keycloak_server}}/auth/realms/{{realm}}/protocol/openid-connect/token`
+
+if you're using the `test-api.postman_environment.json`, keycloak_server and realm is already set.
+
+returns - access token 
 
 
-step 3.
+### Send request to the application test endpoints in the REGO rules.
 
-`/user/habeeb` - Accessible, returns
+GET `/user/habeeb` - Accessible
+
+response;
 
 ```json
 {
@@ -284,7 +301,10 @@ step 3.
 ```
 
 
-`/user/john` - - Inaccessible, returns 
+
+GET `/user/john` - Inaccessible
+
+response;
 
 ```json 
 {
@@ -293,7 +313,9 @@ step 3.
 ```
 
 
-`/user/{username}/test` - Inaccessible, returns 
+GET `/user/{username}/test` - Inaccessible 
+
+response;
 
 ```json 
 {
