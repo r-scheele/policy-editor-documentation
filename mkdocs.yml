@@ -4,8 +4,11 @@ site_name: Policy Editor Documentation
 nav:
   - Getting Started:
     - Introduction: 'index.md'
-    - Installation procedures for the API: 'installation.md'
+    - Why do we need this?: 'use-case.md'
+    - Working principles: 'working.md'
     - Application architecture overview: 'architecture.md'
+    - Conversion Logic: 'logic.md'
+    - Installation procedures for the API: 'installation.md'
     - API Endpoints: 'api.md'
 
 site_author: Abdulrahman Olamilekan

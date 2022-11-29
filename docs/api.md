@@ -17,224 +17,33 @@ These endpoints are only needed if your application has a front-end. They will r
 
 ## Policy CRUD Operations
 
-POST `/policies/`  Create new policy
-
-The POST route takes a request body containing the rules defined according to the schema. It is then, used to build a new policy. The response will be a REGO file written and pushed to GitHub as a newly established remote repository, with the request body conforming to a specified syntax described by the pydantic model `Policy`. <br />
-
-An example request body is: <br />
-
-```json
-{
-"name": "Example",
-"rules": [
-   [
-      {
-      "command": "input_prop_equals",
-      "properties": {
-         "input_property": "request_path",
-         "value": [
-            "v1",
-            "collections",
-            "*"
-         ],
-         "exceptional_value": "obs"
-      }
-      },
-      {
-         "command": "input_prop_in",
-         "properties": {
-            "input_property": "company",
-            "datasource_name": "items",
-            "datasource_loop_variable": "name"
-         }
-      },
-      {
-         "command": "input_prop_equals",
-         "properties": {
-            "input_property": "request_method",
-            "value": "GET"
-         }
-      }
-   ],
-   [
-         {
-         "command": "allow_full_access",
-         "properties": {
-            "input_property": "groupname",
-            "value": "EDITOR_ATAC"
-         }
-      }
-   ]
-]}
-
-```
-
-```bash
-curl -X POST localhost:8000/policies
-   -H 'Content-Type: application/json'
-   -d $request_body
-
-```
-
-An example response body is: <br />
-```json
-{"status": 200, "message": "Policy created successfully"}
-```
-
-GET `/policies/{policy_name}` 
-
-This route gets a specific policy by it's name. The response will be a policy object conforming to the pydantic model `Policy`. <br />
-Example response body: <br />
-
-
-```bash
-curl localhost:8000/policies/{policy_name}
-```
-```json
-{
-"name": "Example",
-"rules": [
-   [
-      {
-         "command": "input_prop_equals",
-         "properties": {
-            "input_property": "request_path",
-            "value": [
-               "v1",
-               "collections",
-               "*"
-            ],
-            "exceptional_value": "obs"
-      }
-      },
-      {
-         "command": "input_prop_in",
-         "properties": {
-            "input_property": "company",
-            "datasource_name": "items",
-            "datasource_loop_variable": "name"
-         }
-      },
-      {
-         "command": "input_prop_equals",
-         "properties": {
-            "input_property": "request_method",
-            "value": "GET"
-         }
-      }
-   ],
-   [
-         {
-         "command": "allow_full_access",
-         "properties": {
-            "input_property": "groupname",
-            "value": "EDITOR_ATAC"
-         }
-      }
-   ]
-]}
-```
-
-
-
-
-
-GET `/policies/` Read all policies  
-
-The GET route get all policies that have been created. The response will be a list of all policies that have been created by a certain user, and contains all the associating rules with the policy <br />
-
-```bash
-curl localhost:8000/policies
-```
-
-An example response body is: <br />
-
-```json
-[
-   {
-      "name": "Example",
-      "rules": [
-         [
-            {
-            "command": "input_prop_equals",
-            "properties": {
-               "input_property": "request_path",
-               "value": [
-                  "v1",
-                  "collections",
-                  "*"
-               ],
-               "exceptional_value": "obs"
-            }
-            },
-            {
-               "command": "input_prop_in",
-               "properties": {
-                  "input_property": "company",
-                  "datasource_name": "items",
-                  "datasource_loop_variable": "name"
-               }
-            },
-            {
-               "command": "input_prop_equals",
-               "properties": {
-                  "input_property": "request_method",
-                  "value": "GET"
-               }
-            }
-         ],
-         [
-            {
-            "command": "allow_full_access",
-            "properties": {
-               "input_property": "groupname",
-               "value": "EDITOR_ATAC"
-            }
-         }
-      ]
-   }
-]
-```
-
-
-PUT `/policies/{policy_name}` Update existing policy by name
-
-```bash
-curl -X PUT localhost:8000/policies/{policy_name}
-   -d $request_body
-```
-
-This request method is used to update a specific policy by name. The response will be a policy object conforming to the pydantic model `Policy`. <br />
-Example response body: <br />
-```json
-{"status": 200, "message": "Updated successfully"}
-```
-
-DELETE `/policies/policy_name}` Delete existing policy by name
-
-
-```bash
-curl -X DELETE localhost:8000/policies/{policy_name}
-```
-
-This request method is used to delete a specific policy by name
-Example response body: <br />
-
-```json
-{"status": 200, "message": "Policy deleted successfully"}  
-```
+Please visit the `/redoc` endpoint to see the API documentation.
 
 ## Repository Management
 
-This section is only needed by the front-end application to select which repo to use for their policy, which would be list as a dropdown menu.
+### Front-end use case
+
+This section contains the endpoints for managing the repositories used by the application. Depending on the sign in method used by the user, repositories from the token provider can be accessed as a list.
 
 GET `/user/repo/github` <br />
+
 GET `/user/repo/gitlab`
 
-The response will be a list of all the repositories that the user has access to. If the access token supplied is from Gitlab, the response will be a list of all the repositories that the user has access to on Gitlab, and vice versa.
+This endpoint is used to select which repo the user wants to use. The response will be a list of all the repositories that the user has access to.
 
-If the API is used directly, the repository to used for writing the policy is supplied as a url in the request body.
+### Backend use case
 
+If the API is used directly, the repository to use for writing the policy is supplied as a url, in the request body
+For Gitlab provider, identifying the repository for writing the policy requires both the url and the repo id. The repo is retrieved from the response body of the GET request to the Gitlab API `/user/repo/gitlab`.
+
+```json
+{
+  "repo_url": "https://gitlab.com/youngestdev1/policies/opal-server",
+  "repo_id": 39020791,
+   ...
+
+}
+```
 ## Database Operations
 
 GET `/data`
